@@ -8,7 +8,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const openai = new OpenAI({
-  apiKey: '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'
+  apiKey: process.env.OPENAI_API_KEY || 'YOUR_BACKUP_KEY_HERE' // fallback for local testing
 });
 
 app.post('/chat', async (req, res) => {
@@ -33,6 +33,8 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('✅ Chatbot server running on http://localhost:3000');
+// Use Render's dynamic port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Chatbot server running on port ${PORT}`);
 });
