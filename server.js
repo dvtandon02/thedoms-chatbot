@@ -1,40 +1,51 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { OpenAI } = require('openai');
+
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import OpenAI from 'openai';
+
+dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+const port = process.env.PORT || 10000;
 
+app.use(cors());
+app.use(express.json());
+
+// ✅ INIT OpenAI with API key from environment
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'YOUR_BACKUP_KEY_HERE' // fallback for local testing
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+// ✅ Endpoint for chatbot
 app.post('/chat', async (req, res) => {
-  const userMessage = req.body.message;
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required.' });
+  }
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a helpful assistant for The Doms — a digital agency combining AI tools and human creativity. You can answer freely like ChatGPT, but always use The Doms' offerings when users ask about services, pricing, or plans.`
-        },
-        { role: 'user', content: userMessage }
-      ]
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: message }],
     });
 
-    res.json({ reply: response.choices[0].message.content });
+    const reply = completion.choices[0]?.message?.content;
+    res.json({ reply });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    console.error('🔥 OpenAI Error:', error);
+    res.status(500).json({
+      error: 'Error reaching OpenAI. Please try again later.',
+      details: error.message,
+    });
   }
 });
 
-// Use Render's dynamic port
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Chatbot server running on port ${PORT}`);
+app.get('/', (req, res) => {
+  res.send('🤖 The Doms Chatbot is running!');
+});
+
+app.listen(port, () => {
+  console.log(`✅ Chatbot server running on port ${port}`);
 });
